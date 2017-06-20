@@ -1,0 +1,25 @@
+{
+  "name": "testexprquasar",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "async": "^2.4.1",
+    "body-parser": "~1.17.1",
+    "connect-sqlite3": "^0.9.9",
+    "cookie-parser": "~1.4.3",
+    "debug": "~2.6.3",
+    "express": "~4.15.2",
+    "express-session": "^1.15.3",
+    "fs": "0.0.1-security",
+    "jade": "~1.11.0",
+    "morgan": "~1.8.1",
+    "oracledb": "^1.13.1",
+    "serve-favicon": "~2.4.2",
+    "xml2js": "^0.4.17",
+    "xmldoc": "^1.1.0",
+    "xmljson": "^0.2.0"
+  }
+}
