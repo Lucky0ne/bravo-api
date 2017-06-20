@@ -8,7 +8,7 @@ var xmldoc = require('xmldoc');
 var apicall = function (req, res, next) {
 
     db.execSql({
-            sql: "select CMENU from V_APPLIST_MENU t where sappcode='Client'",
+            sql: "select CMENU from V_APPLIST_MENU t where sappcode='Account'",
             binds: {},
             getArray: false
         }

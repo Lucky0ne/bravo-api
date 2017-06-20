@@ -1,7 +1,7 @@
 {
-  "username": "NODE",
-  "password": "node",
-  "connectString" : "UDP",
-  "schema" : "PARUS",
+  "username": "VMF",
+  "password": "p",
+  "connectString" : "P852ONE",
+  "schema" : "VMF",
   "port" : 3000
 }

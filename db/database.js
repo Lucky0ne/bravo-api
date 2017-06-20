@@ -4,8 +4,6 @@ https://jsao.io/2015/03/making-a-wrapper-module-for-the-node-js-driver-for-oracl
 var async = require('async');
 var pool;
 var schema;
-var buildupScripts = [];
-var teardownScripts = [];
 
 const
     OBJECT = oracledb.OBJECT,
@@ -82,30 +80,6 @@ function getPool() {
 }
 
 module.exports.getPool = getPool;
-
-function addBuildupSql(statement) {
-    var stmt = {
-        sql: statement.sql,
-        binds: statement.binds || {},
-        options: statement.options || {}
-    };
-
-    buildupScripts.push(stmt);
-}
-
-module.exports.addBuildupSql = addBuildupSql;
-
-function addTeardownSql(statement) {
-    var stmt = {
-        sql: statement.sql,
-        binds: statement.binds || {},
-        options: statement.options || {}
-    };
-
-    teardownScripts.push(stmt);
-}
-
-module.exports.addTeardownSql = addTeardownSql;
 
 function getConnection() {
     return new Promise(function (resolve, reject) {
@@ -258,42 +232,34 @@ module.exports.execSql = execSql;
  * @param params.password
  * @param params.session
  * @param params.sessionID
+ * @param params.app
+ * @param params.company
+ * @param params.lang
  * @returns {Promise}
  */
 function login(params) {
     return new Promise(function (resolve, reject) {
-        simpleExecute("BEGIN " +
-            "  UDO_PACKAGE_NODEWEB_IFACE.LOGIN( " +
-            "       :P_USER, " +
-            "       :P_PASS, " +
-            "       :P_SESSID, " +
-            "       :P_PP, " +
-            "       :P_PERS_RN, " +
-            "       :P_USERFULLNAME, " +
-            "       :P_DEPRN, " +
-            "       :P_DEPCODE " +
-            "  ); " +
-            "END;",
+        simpleExecute(
+            "begin\n" +
+            "  PKG_SESSION.LOGON_WEB(SCONNECT        => :SCONNECT,\n" +
+            "                        SUTILIZER       => :SUTILIZER,\n" +
+            "                        SPASSWORD       => :SPASSWORD,\n" +
+            "                        SIMPLEMENTATION => :SIMPLEMENTATION,\n" +
+            "                        SAPPLICATION    => :SAPPLICATION,\n" +
+            "                        SCOMPANY        => :SCOMPANY,\n" +
+            "                        SLANGUAGE       => :SLANGUAGE);\n" +
+            "end;",
             {
-                P_USER: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.username},
-                P_PASS: {dir: BIND_IN, type: STRING, maxSize: 200, val: params.password},
-                P_SESSID: {dir: BIND_IN, type: STRING, maxSize: 255, val: params.sessionID},
-                P_PP: {dir: BIND_OUT, type: NUMBER},
-                P_PERS_RN: {dir: BIND_OUT, type: NUMBER},
-                P_USERFULLNAME: {dir: BIND_OUT, type: STRING, maxSize: 2000},
-                P_DEPRN: {dir: BIND_OUT, type: NUMBER},
-                P_DEPCODE: {dir: BIND_OUT, type: STRING, maxSize: 2000}
+                SCONNECT: {dir: BIND_IN, type: STRING, maxSize: 255, val: params.sessionID},
+                SUTILIZER: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.username},
+                SPASSWORD: {dir: BIND_IN, type: STRING, maxSize: 200, val: params.password},
+                SIMPLEMENTATION: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.app},
+                SAPPLICATION: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.app},
+                SCOMPANY: {dir: BIND_IN, type: STRING, maxSize: 20, val: params.company},
+                SLANGUAGE: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.lang}
             },
             {}).then(function (result) {
-            params.session.user = params.username;
-            params.session.pass = params.password;
-            params.session.isPmoPerform = result.outBinds.P_PP;
-            params.session.userFullName = result.outBinds.P_USERFULLNAME;
-            params.session.userDeptName = result.outBinds.P_DEPCODE;
-            params.session.userPersRn = result.outBinds.P_PERS_RN;
-            params.session.userDeptRn = result.outBinds.P_DEPRN;
             params.session.isLogged = true;
-            params.isPmoPerform = result.outBinds.P_PP;
             resolve(params);
         }).catch(reject);
     });
@@ -309,17 +275,17 @@ module.exports.login = login;
 function logoff(params) {
     return new Promise(function (resolve, reject) {
         simpleExecute(
-            "BEGIN " +
-            "  UDO_PACKAGE_NODEWEB_IFACE.LOGOFF( " +
-            "       :P_SESSID " +
-            "  ); " +
-            "END;",
+            "begin\n" +
+            "  PKG_SESSION.LOGOFF_WEB(SCONNECT => :SCONNECT);\n" +
+            "end;",
             {
-                P_SESSID: {dir: BIND_IN, type: STRING, maxSize: 255, val: params.sessionID}
+                SCONNECT: {dir: BIND_IN, type: STRING, maxSize: 255, val: params.sessionID}
             },
             {})
-            .then(resolve)
-            .catch(reject);
+            .then(function (result) {
+                params.session.isLogged = false;
+                resolve(params);
+            }).catch(reject);
     });
 }
 module.exports.logoff = logoff;
