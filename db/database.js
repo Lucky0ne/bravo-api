@@ -109,7 +109,6 @@ function execute(sql, bindParams, options, connection) {
             if (err) {
                 return reject(err);
             }
-
             resolve(results);
         });
     });
@@ -162,19 +161,44 @@ module.exports.simpleExecute = simpleExecute;
  * @param params
  * @param params.sql
  * @param params.binds
+ * @param params.params.sessionID
  * @param params.results
  * @returns {Promise}
  */
 function execProc(params) {
     return new Promise(function (resolve, reject) {
-        simpleExecute(
-            params.sql,
-            params.binds,
-            {}
-        ).then(function (result) {
-            params.results = result.outBinds;
-            resolve(params);
-        }).catch(reject);
+        getConnection().then(function (connection) {
+            execute(
+                "begin\n" +
+                "  PKG_SESSION.VALIDATE_WEB(SCONNECT => :SCONNECT);\n" +
+                "end;",
+                {
+                    SCONNECT: {dir: BIND_IN, type: STRING, maxSize: 255, val: params.sessionID}
+                },
+                {},
+                connection
+            ).then(function () {
+                execute(
+                    params.sql,
+                    params.binds,
+                    {isAutoCommit: true},
+                    connection
+                ).then(function (result) {
+                    params.results = result.outBinds;
+                    resolve(params);
+                    process.nextTick(function () {
+                        releaseConnection(connection);
+                    });
+                })
+            }).catch(function (err) {
+                reject(err);
+                process.nextTick(function () {
+                    releaseConnection(connection);
+                });
+            });
+        }).catch(function (err) {
+            reject(err);
+        });
     });
 }
 
@@ -185,6 +209,7 @@ module.exports.execProc = execProc;
  * @param {string} params.sql - текст запроса
  * @param {Object} params.binds - значения переменных запроса (see https://github.com/oracle/node-oracledb/blob/master/doc/api.md#-122-out-and-in-out-bind-parameters)
  * @param {boolean}[params.getArray] - возвращать в виде массива
+ * @param {string} params.sessionID - результат запроса
  * @param {Object} params.dataset - результат запроса
  * @returns {Promise}
  */
@@ -194,36 +219,39 @@ function execSql(params) {
         getConnection()
             .then(function (connection) {
                 execute(
-                    params.sql,
-                    params.binds,
+                    "begin\n" +
+                    "  PKG_SESSION.VALIDATE_WEB(SCONNECT => :SCONNECT);\n" +
+                    "end;",
                     {
-                        isAutoCommit: true,
-                        outFormat: resultType
-                    },
-                    connection)
-                    .then(function (results) {
-                        //results.getRows();
-                        params.dataset = results;
-                        resolve(params);
-                        process.nextTick(function () {
-                            releaseConnection(connection);
-                        });
-
-                    })
-                    .catch(function (err) {
-                        reject(err);
-                        process.nextTick(function () {
-                            releaseConnection(connection);
-                        });
+                        SCONNECT: {dir: BIND_IN, type: STRING, maxSize: 255, val: params.sessionID}
+                    }, {}, connection
+                ).then(function () {
+                    execute(
+                        params.sql,
+                        params.binds,
+                        {
+                            isAutoCommit: true,
+                            outFormat: resultType
+                        },
+                        connection)
+                        .then(function (results) {
+                            params.dataset = results;
+                            resolve(params);
+                            process.nextTick(function () {
+                                releaseConnection(connection);
+                            });
+                        })
+                }).catch(function (err) {
+                    reject(err);
+                    process.nextTick(function () {
+                        releaseConnection(connection);
                     });
-            })
-            .catch(function (err) {
-                reject(err);
-            });
-    });
+                });
+            }).catch(function (err) {
+            reject(err);
+        });
+    })
 }
-
-module.exports.execSql = execSql;
 
 /**
  * Начало сеанса
@@ -237,6 +265,8 @@ module.exports.execSql = execSql;
  * @param params.lang
  * @returns {Promise}
  */
+
+module.exports.execSql = execSql;
 function login(params) {
     return new Promise(function (resolve, reject) {
         simpleExecute(
@@ -253,10 +283,10 @@ function login(params) {
                 SCONNECT: {dir: BIND_IN, type: STRING, maxSize: 255, val: params.sessionID},
                 SUTILIZER: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.username},
                 SPASSWORD: {dir: BIND_IN, type: STRING, maxSize: 200, val: params.password},
-                SIMPLEMENTATION: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.app},
-                SAPPLICATION: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.app},
-                SCOMPANY: {dir: BIND_IN, type: STRING, maxSize: 20, val: params.company},
-                SLANGUAGE: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.lang}
+                SIMPLEMENTATION: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.session.app},
+                SAPPLICATION: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.session.app},
+                SCOMPANY: {dir: BIND_IN, type: STRING, maxSize: 20, val: params.session.company},
+                SLANGUAGE: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.session.lang}
             },
             {}).then(function (result) {
             params.session.isLogged = true;
@@ -264,6 +294,7 @@ function login(params) {
         }).catch(reject);
     });
 }
+
 module.exports.login = login;
 
 /**
@@ -288,4 +319,5 @@ function logoff(params) {
             }).catch(reject);
     });
 }
+
 module.exports.logoff = logoff;

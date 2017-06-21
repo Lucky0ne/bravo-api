@@ -1,6 +1,6 @@
 {
-  "username": "VMF",
-  "password": "p",
+  "username": "PARUSWEB",
+  "password": "parusweb",
   "connectString" : "P852ONE",
   "schema" : "VMF",
   "port" : 3000
