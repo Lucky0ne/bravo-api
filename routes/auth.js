@@ -12,7 +12,7 @@ function login(req, res, next){
     params.session.app = 'Admin';
     params.session.company = 'Организация';
     params.session.lang = 'RUSSIAN';
-    params.session.browser = req.headers.user-agent;
+    params.session.browser = req.header('user-agent');
     params.sessionID = req.sessionID;
     db.login(params).then(function (params){
         req.session.username = params.username;
