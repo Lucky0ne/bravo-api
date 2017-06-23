@@ -2,7 +2,6 @@
  * Created by igorgo on 19.06.2017.
  */
 var checkAuth = function (req, res, next) {
-    console.log(req.session);
     if (req.session && req.session.username)
         return next();
     else {

@@ -59,8 +59,9 @@ app.use(function (req, res, next) {
 // error handler
 app.use(function (err, req, res, next) {
     console.log(err.message);
-    if (err.message.startsWith('ORA-20103: Дальнейшая работа в Системе невозможна, т.к. сеанс был отключён.')) {
+    if (err.message.startsWith('ORA-20103: Дальнейшая работа в Системе невозможна')) {
         console.log('Session Expired');
+        req.session.destroy();
         res.sendStatus(401);
     } else {
         // set locals, only providing error in development
@@ -71,7 +72,6 @@ app.use(function (err, req, res, next) {
         res.status(err.status || 500);
         res.send(err.message);
     }
-})
-;
+});
 
 module.exports = app;

@@ -12,17 +12,16 @@ function login(req, res, next){
     params.session.app = 'Admin';
     params.session.company = 'Организация';
     params.session.lang = 'RUSSIAN';
+    params.session.browser = req.headers.user-agent;
     params.sessionID = req.sessionID;
     db.login(params).then(function (params){
         req.session.username = params.username;
         res.sendStatus(200);
     })
         .catch(next);
-
 }
 
 function logoff(req, res, next){
-    console.log(req.body);
     var params = req.body;
     params.sessionID = req.sessionID;
     params.session = req.session;

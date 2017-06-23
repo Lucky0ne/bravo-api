@@ -277,6 +277,7 @@ function login(params) {
             "                        SIMPLEMENTATION => :SIMPLEMENTATION,\n" +
             "                        SAPPLICATION    => :SAPPLICATION,\n" +
             "                        SCOMPANY        => :SCOMPANY,\n" +
+            "                        SBROWSER        => :SBROWSER,\n" +
             "                        SLANGUAGE       => :SLANGUAGE);\n" +
             "end;",
             {
@@ -286,6 +287,7 @@ function login(params) {
                 SIMPLEMENTATION: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.session.app},
                 SAPPLICATION: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.session.app},
                 SCOMPANY: {dir: BIND_IN, type: STRING, maxSize: 20, val: params.session.company},
+                SBROWSER: {dir: BIND_IN, type: STRING, maxSize: 2000, val: params.session.browser},
                 SLANGUAGE: {dir: BIND_IN, type: STRING, maxSize: 30, val: params.session.lang}
             },
             {}).then(function (result) {
