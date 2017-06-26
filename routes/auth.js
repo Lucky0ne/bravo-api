@@ -26,6 +26,7 @@ function logoff(req, res, next){
     params.sessionID = req.sessionID;
     params.session = req.session;
     db.logoff(params).then(function (params){
+        req.session.destroy();
         res.sendStatus(200);
     })
         .catch(next);
