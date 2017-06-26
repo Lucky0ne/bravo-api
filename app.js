@@ -40,7 +40,7 @@ app.use(session({
     secret: 'papuaz',
     resave: false,
     saveUninitialized: false,
-    cookie: {maxAge: 24 * 60 * 60 * 1000} // 1 day
+    cookie: {maxAge: 2 * 60 * 60 * 1000} // 2 hour
 }));
 
 
