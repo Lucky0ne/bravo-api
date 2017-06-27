@@ -14,7 +14,7 @@ var api = require('./routes/api');
 
 var app = express();
 
-//CORS middleware
+//CORSA middleware
 var allowCrossDomain = function (req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
@@ -24,7 +24,7 @@ var allowCrossDomain = function (req, res, next) {
 }
 
 
-// view engine setup
+// set view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
